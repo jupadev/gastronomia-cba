@@ -2,7 +2,8 @@ import * as dotenv from "dotenv";
 import { Context, Telegraf } from "telegraf";
 import { message } from "telegraf/filters";
 
-import { parseFeeds, readStoredFeeds, storeFeeds } from "./feeds";
+import { generateFeeds, readStoredFeeds } from "./feeds";
+import { cronFeed } from "./feeds/cronFeeds";
 import { ENV } from "./types";
 
 dotenv.config();
@@ -50,15 +51,11 @@ bot.on(message("text"), async (ctx) => {
   await ctx.telegram.sendMessage(ctx.message.chat.id, HELP_TEXT);
 });
 
-const generateFeeds = async () => {
-  const feedsJson = await parseFeeds();
-  storeFeeds(JSON.stringify(feedsJson));
-};
-
 const start = async () => {
   console.log("initializing bot");
   bot.launch();
   await generateFeeds();
+  cronFeed();
 };
 
 start();

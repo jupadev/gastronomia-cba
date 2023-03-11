@@ -34,4 +34,10 @@ const readStoredFeeds = async () => {
   return JSON.parse(feedsJson.toString());
 };
 
-export { parseFeeds, storeFeeds, readStoredFeeds };
+const generateFeeds = async () => {
+  const feedsJson = await parseFeeds();
+  await storeFeeds(JSON.stringify(feedsJson));
+  console.log("Feeds generated successfuly");
+};
+
+export { parseFeeds, storeFeeds, readStoredFeeds, generateFeeds };
