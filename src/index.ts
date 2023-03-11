@@ -1,61 +1,77 @@
-import { App } from "@tinyhttp/app";
-import { logger } from "@tinyhttp/logger";
-import * as dotenv from "@tinyhttp/dotenv";
-import * as bodyParser from "milliparsec";
-import axios from "axios";
+import * as dotenv from "dotenv";
+import { Context, Telegraf } from "telegraf";
+import { message } from "telegraf/filters";
 
-type ENV = {
-  PORT?: string;
-  TELEGRAM_API_TOKEN?: string;
-  SERVER_URL?: string;
-};
+// import message from "telegraf/filters";
 
-// set up the env variables
+import { parseFeeds, readStoredFeeds, storeFeeds } from "./feeds";
+import { ENV } from "./types";
+
 dotenv.config();
-const app = new App();
-
-app.use(bodyParser.json());
 
 const env = process.env as ENV;
-const { PORT, TELEGRAM_API_TOKEN, SERVER_URL } = env;
-
-const serverPort = PORT ? parseInt(PORT, 10) : 3000;
+const { TELEGRAM_API_TOKEN = "", SERVER_URL } = env;
 
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_API_TOKEN}`;
 const URI = `/webhook/${TELEGRAM_API_TOKEN}`;
 const WEBHOOK_URL = `${SERVER_URL}${URI}`;
 
-console.log("URI", URI);
+console.log("URI", URI, TELEGRAM_API);
 console.log("WEBHOOK_URL", WEBHOOK_URL);
 
-const init = async () => {
-  const res = await axios.get(
-    `${TELEGRAM_API}/setWebhook?url=${WEBHOOK_URL}&drop_pending_updates=true`
-  );
-  if (res.status !== 200) {
-    console.error(res);
-  }
-  console.log(res.data);
+const HELP_TEXT = `Bienvenido, te puedo ayudar con los siguientes comandos:
+- Para ver las ultimas noticias /news
+- Para bucar un local(resto, bar, cafe, etc) /search texto
+`;
+const bot = new Telegraf(TELEGRAM_API_TOKEN);
+
+bot.on(message("sticker"), (ctx) => ctx.reply("👍"));
+
+bot.help(async (ctx: Context) => {
+  ctx.replyWithHTML(HELP_TEXT);
+});
+
+bot.command("quit", async (ctx) => {
+  await ctx.telegram.leaveChat(ctx.message.chat.id);
+  await ctx.leaveChat();
+});
+
+bot.command(/news|noticias|ultimo|ultima/, async (ctx) => {
+  const feeds = await readStoredFeeds();
+  const index = Math.floor(Math.random() * 10);
+  const news = feeds.items[index] || feeds.items[0];
+  const publishedDate = new Date(news.isoDate);
+  const newsBody = news.contentSnippet;
+
+  const content = `${news.title}
+${newsBody}
+${news.link}
+<i>publicado:${publishedDate.toLocaleString("es-AR")}</i>
+  `;
+  console.log(content);
+  await ctx.replyWithHTML(content);
+});
+
+bot.command(/search|buscar|local/, (ctx) =>
+  ctx.reply("Perdon, este comando aun no testa listo 👨‍💻")
+);
+
+bot.on(message("text"), async (ctx) => {
+  await ctx.telegram.sendMessage(ctx.message.chat.id, HELP_TEXT);
+});
+
+const generateFeeds = async () => {
+  const feedsJson = await parseFeeds();
+  storeFeeds(JSON.stringify(feedsJson));
 };
 
-app
-  .use(logger())
-  .post(URI, async (req, res) => {
-    const {
-      chat: { id: chatId },
-      text,
-    } = req.body?.message || {};
-    console.log(chatId, text);
-    if (chatId && text) {
-      await axios.post(`${TELEGRAM_API}/sendMessage`, {
-        chat_id: chatId,
-        text,
-      });
-    }
+const start = async () => {
+  console.log("initializing bot");
+  bot.launch();
+  await generateFeeds();
+};
 
-    return res.status(200).json({ status: "ok" });
-  })
-  .listen(serverPort, async () => {
-    console.log(`server listening on ${serverPort}`);
-    await init();
-  });
+start();
+
+process.once("SIGINT", () => bot.stop("SIGINT"));
+process.once("SIGTERM", () => bot.stop("SIGTERM"));
