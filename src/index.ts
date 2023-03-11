@@ -2,22 +2,13 @@ import * as dotenv from "dotenv";
 import { Context, Telegraf } from "telegraf";
 import { message } from "telegraf/filters";
 
-// import message from "telegraf/filters";
-
 import { parseFeeds, readStoredFeeds, storeFeeds } from "./feeds";
 import { ENV } from "./types";
 
 dotenv.config();
 
 const env = process.env as ENV;
-const { TELEGRAM_API_TOKEN = "", SERVER_URL } = env;
-
-const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_API_TOKEN}`;
-const URI = `/webhook/${TELEGRAM_API_TOKEN}`;
-const WEBHOOK_URL = `${SERVER_URL}${URI}`;
-
-console.log("URI", URI, TELEGRAM_API);
-console.log("WEBHOOK_URL", WEBHOOK_URL);
+const { TELEGRAM_API_TOKEN = "" } = env;
 
 const HELP_TEXT = `Bienvenido, te puedo ayudar con los siguientes comandos:
 - Para ver las ultimas noticias /news
@@ -48,7 +39,6 @@ ${newsBody}
 ${news.link}
 <i>publicado:${publishedDate.toLocaleString("es-AR")}</i>
   `;
-  console.log(content);
   await ctx.replyWithHTML(content);
 });
 
