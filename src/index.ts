@@ -3,7 +3,6 @@ import { Context, Telegraf } from "telegraf";
 import { message } from "telegraf/filters";
 
 import { generateFeeds, readStoredFeeds } from "./feeds";
-import { cronFeed } from "./feeds/cronFeeds";
 import { ENV } from "./types";
 
 dotenv.config();
@@ -13,7 +12,7 @@ const { TELEGRAM_API_TOKEN = "" } = env;
 
 const HELP_TEXT = `Bienvenido, te puedo ayudar con los siguientes comandos:
 - Para ver las ultimas noticias /news
-- Para bucar un local(resto, bar, cafe, etc) /search texto
+- Para buscar un resto, bar, cafe, etc, /search termino. Por ejemplo /search pizza
 `;
 const bot = new Telegraf(TELEGRAM_API_TOKEN);
 
@@ -44,7 +43,7 @@ ${news.link}
 });
 
 bot.command(/search|buscar|local/, (ctx) =>
-  ctx.reply("Perdon, este comando aun no testa listo 👨‍💻")
+  ctx.reply("Perdon, este comando aun no esta listo 👨‍💻")
 );
 
 bot.on(message("text"), async (ctx) => {
@@ -52,10 +51,10 @@ bot.on(message("text"), async (ctx) => {
 });
 
 const start = async () => {
-  console.log("initializing bot");
-  bot.launch();
+  console.log("Getting feeds");
   await generateFeeds();
-  cronFeed();
+  console.log("Initializing bot");
+  bot.launch();
 };
 
 start();
