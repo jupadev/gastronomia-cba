@@ -4,4 +4,6 @@ export type ENV = {
   SERVER_URL?: string;
   FEED_URL?: string;
   FEED_UPDATE_FREQ?: string;
+  GOOGLE_API_KEY?: string;
+  LOCATION_LAT_LONG?: string;
 };
