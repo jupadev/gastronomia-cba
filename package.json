@@ -12,6 +12,7 @@
   "author": "Juan Pablo Vargas",
   "license": "MIT",
   "dependencies": {
+    "@googlemaps/google-maps-services-js": "3.3.27",
     "dotenv": "16.0.3",
     "express": "4.18.2",
     "rss-parser": "3.12.0",
